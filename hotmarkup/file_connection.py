@@ -42,10 +42,10 @@ class FileConnection(BaseConnection):
 
 class YamlConnection(FileConnection):
     """Yaml File Connection via PyYAML backend"""
-    def __init__(self, path, **kwargs):
+    def __init__(self, *args, **kwargs):
         if yaml is None:
             raise RuntimeError('You need to install PyYAML to use YamlConnection')
-        super().__init__(path, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def load(self):
         with open(self._path) as file:
@@ -58,10 +58,10 @@ class YamlConnection(FileConnection):
 
 class JsonConnection(FileConnection):
     """Json File Connection via json backend"""
-    def __init__(self, path, **kwargs):
+    def __init__(self, *args, **kwargs):
         if json is None:
             raise RuntimeError('You need to install json to use JsonConnection')
-        super().__init__(path, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def load(self):
         with open(self._path) as file:
@@ -74,10 +74,10 @@ class JsonConnection(FileConnection):
 
 class PickleConnection(FileConnection):
     """Pickle File Connection"""
-    def __init__(self, path, **kwargs):
+    def __init__(self, *args, **kwargs):
         if pickle is None:
             raise RuntimeError('You need to install pickle to use JsonConnection')
-        super().__init__(path, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def load(self):
         with open(self._path, 'rb') as file:
