@@ -3,6 +3,10 @@ from collections import Iterable
 
 
 class BaseConnection:
+    """All connection types must inherit BaseConnection.
+    This class implements all connection functionality except
+    functions load, dump and stamp
+    """
     def __init__(self, name=None, root=None, logger: logging.Logger = None, mutable=True, dump=True, reload=True):
         """Create new BaseConnection
 
@@ -155,12 +159,17 @@ class BaseConnection:
         self._cached_stamp = self.stamp()
 
     def load(self) -> Iterable:
+        """Returns parsed data e.g. list or dict. Calls when stamp changes"""
         raise NotImplementedError(f'Function \'load\' in {self.__class__.__name__} not implemented')
 
     def dump(self, data: Iterable):
+        """Function called on data change if dump is True"""
         raise NotImplementedError(f'Function \'dump\' in {self.__class__.__name__} not implemented')
 
     def stamp(self) -> int:
+        """Function called on every request if reload is True.
+        If stamp does not equals previously saved stamp load function calls
+        """
         raise NotImplementedError(f'Function \'stamp\' in {self.__class__.__name__} not implemented')
 
     def to_basic(self) -> Iterable:
