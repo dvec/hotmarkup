@@ -11,7 +11,7 @@ Currently supported formats: **YAML**, **JSON**, **Pickle**
  - Dump file on every change (pass `dump=False` to connection constructor to disable)
  - Immutable connections (pass `mutable=False` to connection constructor to enable)
 ## Examples
-#### Reload
+#### [Reload](https://github.com/dvec/hotmarkup/blob/master/examples/reload.py)
 ```python
 from hotmarkup import JsonConnection
 
@@ -21,7 +21,7 @@ with open('example.json', 'w') as f:
     f.write('{"changed": true}')
 print(connection.changed)  # Out: True
 ```
-#### Dump
+#### [Dump](https://github.com/dvec/hotmarkup/blob/master/examples/dump.py)
 ```python
 from hotmarkup import JsonConnection
 
@@ -30,7 +30,7 @@ print(open('example.json').read())  # Out: {"changed": false}
 connection.changed = True
 print(open('example.json').read())  # Out: {"changed": true}
 ```
-#### Logging
+#### [Logging](https://github.com/dvec/hotmarkup/blob/master/examples/log.py)
 ```python
 import logging
 from hotmarkup import YamlConnection
@@ -45,7 +45,7 @@ Output:
 INFO:example.yaml:Loaded example.yaml config: {'something_important': 'old_value'}
 INFO:example.yaml:Setting 'something_important' to 'new_value'
 ```
-#### Counter
+#### [Counter](https://github.com/dvec/hotmarkup/blob/master/examples/counter.py)
 ```python
 from hotmarkup import YamlConnection
 
