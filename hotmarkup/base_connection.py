@@ -97,7 +97,6 @@ class BaseConnection:
             def func(*args, **kwargs):
                 before = children_hash()
                 value = getattr(self._children, item)(*args, **kwargs)
-                print(self._children)
                 if self._root._initialized and before != children_hash():
                     if not self._root._mutable:
                         raise RuntimeError(
