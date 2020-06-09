@@ -11,6 +11,10 @@ Currently supported formats: **YAML**, **JSON**, **Pickle**
  - Reload on file change (pass `reload=False` to connection constructor to disable)
  - Dump file on every change (pass `dump=False` to connection constructor to disable)
  - Immutable connections (pass `mutable=False` to connection constructor to enable)
+## Installation
+```shell script
+pip install git+git://github.com/dvec/hotmarkup
+```
 ## Examples
 #### [Reload](https://github.com/dvec/hotmarkup/blob/master/examples/reload.py)
 ```python
