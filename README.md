@@ -1,5 +1,5 @@
 # HOTMARKUP
-[![Build Status](https://travis-ci.org/dvec/hotmarkup.svg?branch=master)](https://travis-ci.org/dvec/hotmarkup)
+[![Build Status](https://travis-ci.com/dvec/hotmarkup.svg?branch=master)](https://travis-ci.com/dvec/hotmarkup)
 #### Python configuration as it should be
 
 Currently supported formats: **YAML**, **JSON**, **Pickle**
