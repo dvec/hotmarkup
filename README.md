@@ -13,7 +13,7 @@ Currently supported formats: **YAML**, **JSON**, **Pickle**
  - Immutable connections (pass `mutable=False` to connection constructor to enable)
 ## Installation
 ```shell script
-pip install git+git://github.com/dvec/hotmarkup
+pip install hotmarkup
 ```
 ## Examples
 #### [Reload](https://github.com/dvec/hotmarkup/blob/master/examples/reload.py)
