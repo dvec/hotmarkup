@@ -94,3 +94,8 @@ class TestBaseConnection(unittest.TestCase):
         mock = BaseConnectionMock({'a': 'b'})
         mock.a = 'c'
         self.assertEqual(mock.a, 'c')
+
+    def test_to_basic(self):
+        basic = {'a': 'b'}
+        mock = BaseConnectionMock(basic)
+        self.assertEqual(mock.to_basic(), basic)
