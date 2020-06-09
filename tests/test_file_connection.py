@@ -1,3 +1,4 @@
+import logging
 import os
 import tempfile
 import shutil
@@ -8,6 +9,7 @@ from hotmarkup.file_connection import YamlConnection, JsonConnection, PickleConn
 
 class TestFileConnection(unittest.TestCase):
     def setUp(self):
+        logging.basicConfig(level=logging.DEBUG)
         self.dir_path = tempfile.mkdtemp()
 
     def tearDown(self):
