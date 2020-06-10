@@ -63,7 +63,7 @@ class BaseConnection:
             return
         if self._initialized and not self._root._mutable:
             raise RuntimeError(f'Config {self._root._name} is immutable')
-        self._logger.info(f'Setting \'{key}\' to \'{value}\'')
+        self._root._logger.info(f'Setting \'{key}\' to \'{value}\'')
         self._children[key] = value
         if self._root._initialized:
             self._root._safe_dump()
@@ -134,13 +134,13 @@ class BaseConnection:
             return False
         new_stamp = self.stamp()
         if self._initialized:
-            self._logger.debug(f'Cached stamp: {self._cached_stamp} Current stamp: {new_stamp}')
+            self._root._logger.debug(f'Cached stamp: {self._cached_stamp} Current stamp: {new_stamp}')
         return self._cached_stamp != new_stamp
 
     def _safe_load(self):
         if self._root is not self:
             raise RuntimeError('Called _safe_load for non-root instance')
-        self._logger.debug(f'Loading config')
+        self._root._logger.debug(f'Loading config')
         self._initialized = False
         self._children = BaseConnection._from_basic(self.load(), self)._children
         self._initialized = True
@@ -152,7 +152,7 @@ class BaseConnection:
             raise RuntimeError(f'Called _safe_dump for non-mutable instance')
         if not self._root._dump:
             return
-        self._logger.debug(f'Saving config')
+        self._root._logger.debug(f'Saving config')
         new_data = self.to_basic()
         self.dump(new_data)
         self._cached_stamp = self.stamp()

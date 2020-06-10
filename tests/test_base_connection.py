@@ -33,6 +33,11 @@ class TestBaseConnection(unittest.TestCase):
         mock = BaseConnectionMock([0, 2, 1])
         self.assertEqual(mock[1], 2)
 
+    def test_multiple_level(self):
+        mock = BaseConnectionMock({'a': {'b': {'c': 'd'}}})
+        mock.a.b.c = 'e'
+        self.assertEqual(mock.a.b.c, 'e')
+
     def test_reload(self):
         mock = BaseConnectionMock({'a': 'b'})
         mock._stamp = 1
