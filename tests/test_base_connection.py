@@ -82,6 +82,17 @@ class TestBaseConnection(unittest.TestCase):
         mock.sort()
         self.assertEqual(mock._dumps, [list(range(10))])
 
+    def test_set_empty_basic(self):
+        mock = BaseConnectionMock({'a': 'b'})
+        mock.c = {}
+        mock.c.d = 'e'
+        self.assertEqual(mock._dumps, [{'a': 'b', 'c': {}}, {'a': 'b', 'c': {'d': 'e'}}])
+
+    def test_set_basic(self):
+        mock = BaseConnectionMock({'a': 'b'})
+        mock.c = {'d': 'e'}
+        self.assertEqual(mock._dumps, [{'a': 'b', 'c': {'d': 'e'}}])
+
     def test_item_get(self):
         mock = BaseConnectionMock({'a': 'b'})
         self.assertEqual(mock['a'], 'b')

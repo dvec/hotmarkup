@@ -64,7 +64,10 @@ class BaseConnection:
         if self._initialized and not self._root._mutable:
             raise RuntimeError(f'Config {self._root._name} is immutable')
         self._root._logger.info(f'Setting \'{key}\' to \'{value}\'')
-        self._children[key] = value
+        if isinstance(value, (list, dict)):
+            self._children[key] = self._from_basic(value, self._root)
+        else:
+            self._children[key] = value
         if self._root._initialized:
             self._root._safe_dump()
 
