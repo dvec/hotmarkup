@@ -23,16 +23,23 @@ class FileConnection(BaseConnection):
     """All file connection types must inherit FileConnection.
     This class implements stamp function
     """
-    def __init__(self, path, default=None, **kwargs):
+    def __init__(self, path, default=None, override=None, **kwargs):
         """Create new FileConnection
 
         Keyword arguments:
         path -- path to file with data
         default -- default data which will be used if file is empty or does not exists
+        override -- data that will dumped to file while creating FileConnection.
+                    If passed then default will be ignored
         """
         self._path = path
-        if default is not None and (not os.path.exists(path) or os.stat(path).st_size == 0):
+        if default is not None and override is None and \
+                (not os.path.exists(path) or os.stat(path).st_size == 0):
             self.dump(default)
+        if override is not None:
+            self.dump(override)
+        self._default = default
+        self._override = override
         super().__init__(name=path, **kwargs)
 
     def stamp(self):
@@ -49,7 +56,15 @@ class YamlConnection(FileConnection):
 
     def load(self):
         with open(self._path) as file:
-            return yaml.safe_load(file)
+            data = yaml.safe_load(file)
+        if not self._initialized and not data:  # For case if file is empty
+            if self._override is not None:
+                data = self._override
+            elif self._default is not None:
+                data = self._default
+            else:
+                data = {}
+        return data
 
     def dump(self, data):
         with open(self._path, 'w') as file:
@@ -65,7 +80,15 @@ class JsonConnection(FileConnection):
 
     def load(self):
         with open(self._path) as file:
-            return json.load(file)
+            data = json.load(file)
+        if not self._initialized and not data:  # For case if file is empty
+            if self._override is not None:
+                data = self._override
+            elif self._default is not None:
+                data = self._default
+            else:
+                data = {}
+        return data
 
     def dump(self, data):
         with open(self._path, 'w') as file:
