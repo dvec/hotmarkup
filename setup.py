@@ -7,7 +7,7 @@ with open(join(dirname(__file__), 'README.md')) as readme:
 
 setup(
     name='hotmarkup',
-    version='0.1.1',
+    version='0.1.2',
     author="Anton Ugryumov",
     author_email='dvecend@gmail.com',
     packages=find_packages(),
