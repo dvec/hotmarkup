@@ -82,6 +82,11 @@ class TestBaseConnection(unittest.TestCase):
         mock.sort()
         self.assertEqual(mock._dumps, [list(range(10))])
 
+    def test_iadd(self):
+        mock = BaseConnectionMock([0, 1])
+        mock += [2, 3]
+        self.assertEqual(mock.to_basic(), [0, 1, 2, 3])
+
     def test_set_empty_basic(self):
         mock = BaseConnectionMock({'a': 'b'})
         mock.c = {}

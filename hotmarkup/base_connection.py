@@ -114,19 +114,17 @@ class BaseConnection:
         del self[item]
 
     def __len__(self):
-        if self._root is self and self._needs_reload():
-            self._safe_load()
         return self.__getattr__('__len__')()
 
     def __iter__(self):
-        if self._root is self and self._needs_reload():
-            self._safe_load()
         return self.__getattr__('__iter__')()
 
     def __contains__(self, item):
-        if self._root is self and self._needs_reload():
-            self._safe_load()
         return self.__getattr__('__contains__')(item)
+
+    def __iadd__(self, other):
+        self.__getattr__('__iadd__')(other)
+        return self
 
     def _needs_reload(self) -> bool:
         if not self._initialized:
