@@ -8,7 +8,7 @@ from hotmarkup.file_connection import YamlConnection, JsonConnection, PickleConn
 
 class TestFileConnection(unittest.TestCase):
     def setUp(self):
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.INFO)
         self.dir_path = tempfile.mkdtemp()
 
     def tearDown(self):
@@ -16,20 +16,20 @@ class TestFileConnection(unittest.TestCase):
 
     def _test_dict_file_connection(self, connection_type):
         path = tempfile.NamedTemporaryFile(dir=self.dir_path).name
-        connection_type(path, default={'test_ok': False})
-        connection = connection_type(path)
-        self.assertEqual(connection.test_ok, False)
-        connection.test_ok = True
+        connection_type(path, name='test_1', default={'a': 'b'})
+        connection = connection_type(path, name='test_2')
+        self.assertEqual(connection.a, 'b')
+        connection.a = 'c'
         del connection
-        connection = connection_type(path)
-        self.assertEqual(connection.test_ok, True)
+        connection = connection_type(path, name='test_3')
+        self.assertEqual(connection.a, 'c')
 
     def _test_empty_file(self, connection_type):
         connection = connection_type(tempfile.NamedTemporaryFile(dir=self.dir_path)
-                                     .name, default={})
+                                     .name, name='test_1', default={})
         self.assertEqual(connection.to_basic(), {})
         connection = connection_type(tempfile.NamedTemporaryFile(dir=self.dir_path)
-                                     .name, default=[])
+                                     .name, name='test_2', default=[])
         self.assertEqual(connection.to_basic(), [])
 
     def _test_override_file(self, connection_type):

@@ -23,7 +23,7 @@ class RootConnectionMock(RootConnection):
 
 class TestBaseConnection(unittest.TestCase):
     def setUp(self):
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.INFO)
 
     def test_dict(self):
         mock = RootConnectionMock({'a': 'b'})
