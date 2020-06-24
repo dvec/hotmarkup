@@ -7,8 +7,6 @@ from hotmarkup.file_connection import YamlConnection, JsonConnection, PickleConn
 
 
 class TestFileConnection(unittest.TestCase):
-    TO_DICT_TEST = [YamlConnection, JsonConnection, PickleConnection]
-
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
         self.dir_path = tempfile.mkdtemp()
@@ -42,7 +40,14 @@ class TestFileConnection(unittest.TestCase):
         connection = connection_type(path, override={'c': 'e'})
         self.assertEqual(connection.to_basic(), {'c', 'e'})
 
-    def test(self):
-        for connection_type in self.TO_DICT_TEST:
-            self._test_dict_file_connection(connection_type)
-            self._test_empty_file(connection_type)
+    def test_yaml(self):
+        self._test_dict_file_connection(YamlConnection)
+        self._test_empty_file(YamlConnection)
+
+    def test_json(self):
+        self._test_dict_file_connection(JsonConnection)
+        self._test_empty_file(JsonConnection)
+
+    def test_pickle(self):
+        self._test_dict_file_connection(PickleConnection)
+        self._test_empty_file(PickleConnection)

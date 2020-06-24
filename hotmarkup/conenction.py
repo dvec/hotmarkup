@@ -19,12 +19,12 @@ class Connection(object):
     """
     # noinspection PyProtectedMember
     def __init__(self, name: str, basic: BASIC_TYPE, parent,
-                 change_callback: Callable[[str, MutationType, Any], None], check_callback: Callable[[], None]):
+                 mutation_callback: Callable[[str, MutationType, Any], None], check_callback: Callable[[], None]):
         """
         :param name: Connection name used for logging configuration (defaults to __name__)
         :param basic: Data for connection
         :param parent: Connection parent. If connection is root parent equals to self
-        :param change_callback: Function that will be called on data change
+        :param mutation_callback: Function that will be called on mutation
         :param check_callback: Function that will be called to check if data is actual. If not function must reload data
         """
         self._parent: Connection = parent
@@ -38,7 +38,7 @@ class Connection(object):
         self._logger: logging.Logger = self._root._logger
         self._mutable: bool = self._parent._mutable
 
-        self._change_callback: Callable[[str, MutationType, Any], None] = change_callback
+        self._mutation_callback: Callable[[str, MutationType, Any], None] = mutation_callback
         self._check_callback: Callable[[], None] = check_callback
 
         self._load_from_basic(basic)
@@ -51,10 +51,10 @@ class Connection(object):
             raise RuntimeError(f'Value {self._name + "." + key} is immutable')
         existed: bool = key in self._children
         if isinstance(value, (list, dict)):
-            self._children[key] = Connection(key, value, self, self._change_callback, self._check_callback)
+            self._children[key] = Connection(key, value, self, self._mutation_callback, self._check_callback)
         else:
             self._children[key] = value
-        self._change_callback(self._name + '.' + key, MutationType.UPDATE if existed else MutationType.ADD, value)
+        self._mutation_callback(self._name + '.' + key, MutationType.UPDATE if existed else MutationType.ADD, value)
 
     def __getitem__(self, item):
         self._check_callback()
@@ -62,7 +62,7 @@ class Connection(object):
 
     def __delitem__(self, key):
         del self._children[key]
-        self._change_callback(self._name + '.' + key, MutationType.DELETE, None)
+        self._mutation_callback(self._name + '.' + key, MutationType.DELETE, None)
 
     def __setattr__(self, key, value):
         if key.startswith('_') or key in dir(self) or key in dir(self.__class__):
@@ -85,12 +85,12 @@ class Connection(object):
                 for child_index in range(len(self._children)):
                     if isinstance(self._children[child_index], BASIC_TYPE.__args__):
                         self._children[child_index] = Connection(str(child_index), self._children[child_index],
-                                                                 self, self._change_callback, self._check_callback)
+                                                                 self, self._mutation_callback, self._check_callback)
                 if before != children_hash():
                     if not self.mutable:
                         raise RuntimeError(
                             f'Called {type(self._children).__name__}.{item} for non-mutable instance')
-                    self._change_callback(self._name, MutationType.FUNC, self._children)
+                    self._mutation_callback(self._name + '.' + item, MutationType.FUNC, self._children)
                 return value
 
             return func
@@ -112,6 +112,9 @@ class Connection(object):
         self._children.__iadd__(other)
         return self
 
+    def __repr__(self):
+        return str(self.to_basic())
+
     def _get_all_children(self):
         all_children = []
         for child in self._children:
@@ -124,14 +127,14 @@ class Connection(object):
             self._children = {}
             for k, v in basic.items():
                 if any(isinstance(v, x) for x in BASIC_TYPE.__args__):
-                    self._children[k] = Connection(k, v, self, self._change_callback, self._check_callback)
+                    self._children[k] = Connection(k, v, self, self._mutation_callback, self._check_callback)
                 else:
                     self._children[k] = v
         elif isinstance(basic, list):
             self._children = []
             for e, v in enumerate(basic):
                 if any(isinstance(v, x) for x in BASIC_TYPE.__args__):
-                    self._children.append(Connection(str(e), v, self, self._change_callback, self._check_callback))
+                    self._children.append(Connection(str(e), v, self, self._mutation_callback, self._check_callback))
                 else:
                     self._children.append(v)
         else:
@@ -171,7 +174,7 @@ class Connection(object):
     @mutable.setter
     def mutable(self, value: bool):
         self._mutable = value
-        for child in self._children:
+        for child in (self._children.values() if isinstance(self._children, dict) else self._children):
             if isinstance(child, Connection):
                 child.mutable = value
 
@@ -196,12 +199,19 @@ class RootConnection(Connection):
         self._mutable: bool = mutable
         self._dump: bool = dump
         self._reload: bool = reload
-        super().__init__(name, self.load(), self, self._change_callback, self._check_callback)
+        super().__init__(name, self.load(), self, self._mutation_callback, self._check_callback)
 
-    def _change_callback(self, name: str, mutation_type: MutationType, new_value):
-        log_value = new_value.to_basic() if isinstance(new_value, Connection) else new_value
-        self._logger.info(f'Registered {mutation_type.name} '
-                          f'{f"{name}" if mutation_type == MutationType.DELETE else f"{name}={log_value}"}')
+    def _log_mutation(self, level, name: str, mutation_type: MutationType, new_value):
+        value_to_log = str(new_value)
+        self._logger.log(level, f'Mutation {mutation_type.name} ' + {
+            MutationType.ADD: f'{name}={value_to_log}',
+            MutationType.DELETE: f'{name}',
+            MutationType.UPDATE: f'{name}={value_to_log}',
+            MutationType.FUNC: f'{name}; new value: {value_to_log}',
+        }[mutation_type])
+
+    def _mutation_callback(self, name: str, mutation_type: MutationType, new_value):
+        self._log_mutation(logging.INFO, name, mutation_type, new_value)
         if self._dump is False:
             return
         self._logger.debug(f'Saving config')
@@ -223,7 +233,7 @@ class RootConnection(Connection):
         raise NotImplementedError(f'Function \'load\' in {self.__class__.__name__} not implemented')
 
     def dump(self, data: BASIC_TYPE):
-        """Function called on data change if dump is True"""
+        """Function called on mutation if dump is True"""
         raise NotImplementedError(f'Function \'dump\' in {self.__class__.__name__} not implemented')
 
     def stamp(self) -> int:

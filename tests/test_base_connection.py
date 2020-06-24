@@ -120,3 +120,36 @@ class TestBaseConnection(unittest.TestCase):
         basic = {'a': 'b'}
         mock = RootConnectionMock(basic)
         self.assertEqual(mock.to_basic(), basic)
+
+    def test_partly_immutable(self):
+        mock = RootConnectionMock({'a': {'b': {'c': 'd'}}, 'e': {'f': 'g'}})
+        mock.a.mutable = False
+        with self.assertRaises(RuntimeError):
+            mock.a.b.c = 'e'
+        mock.a.mutable = True
+        mock.a.b.c = 'e'
+        self.assertEqual(mock.a.b.c, 'e')
+
+    def test_add_log(self):
+        mock = RootConnectionMock({})
+        with self.assertLogs('mock', level=logging.INFO) as log:
+            mock.a = 'b'
+            self.assertEqual(log.output, ['INFO:mock:Mutation ADD mock.a=b'])
+
+    def test_delete_log(self):
+        mock = RootConnectionMock({'a': 'b'})
+        with self.assertLogs('mock', level=logging.INFO) as log:
+            del mock.a
+            self.assertEqual(log.output, ['INFO:mock:Mutation DELETE mock.a'])
+
+    def test_update_log(self):
+        mock = RootConnectionMock({'a': 'b'})
+        with self.assertLogs('mock', level=logging.INFO) as log:
+            mock.a = 'c'
+            self.assertEqual(log.output, ['INFO:mock:Mutation UPDATE mock.a=c'])
+
+    def test_func_log(self):
+        mock = RootConnectionMock({'a': [2, 3, 1, 0]})
+        with self.assertLogs('mock', level=logging.INFO) as log:
+            mock.a.sort()
+            self.assertEqual(log.output, ['INFO:mock:Mutation FUNC mock.sort; new value: [0, 1, 2, 3]'])
