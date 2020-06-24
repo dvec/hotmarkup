@@ -44,14 +44,17 @@ except ImportError as e:
 
 class YamlConnection(FileConnection):
     """Yaml File Connection via PyYAML backend"""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, loader=yaml.SafeLoader, dumper=yaml.SafeDumper, dumper_kwargs: dict = None, **kwargs):
         if yaml is None:
             raise RuntimeError('You need to install PyYAML to use YamlConnection')
+        self._loader = loader
+        self._dumper = dumper
+        self._dumper_kwargs = dumper_kwargs or {}
         super().__init__(*args, **kwargs)
 
     def load(self) -> BASIC_TYPE:
         with open(self._path) as file:
-            data: BASIC_TYPE = yaml.safe_load(file)
+            data: BASIC_TYPE = yaml.load(file, self._loader)
         if not data:  # For case if file is empty
             if self._override is not None:
                 data: BASIC_TYPE = self._override
@@ -63,7 +66,7 @@ class YamlConnection(FileConnection):
 
     def dump(self, data: BASIC_TYPE):
         with open(self._path, 'w') as file:
-            yaml.safe_dump(data, file, allow_unicode=True)
+            yaml.dump(data, file, self._dumper, **self._dumper_kwargs)
 
 
 try:
@@ -74,14 +77,16 @@ except ImportError as e:
 
 class JsonConnection(FileConnection):
     """Json File Connection via json backend"""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, parser_kwargs: dict = None, dumper_kwargs: dict = None, **kwargs):
         if json is None:
             raise RuntimeError('You need to install json to use JsonConnection')
+        self._parser_kwargs = parser_kwargs or {}
+        self._dumper_kwargs = dumper_kwargs or {}
         super().__init__(*args, **kwargs)
 
     def load(self) -> BASIC_TYPE:
         with open(self._path) as file:
-            data = json.load(file)
+            data = json.load(file, **self._parser_kwargs)
         if not data:  # For case if file is empty
             if self._override is not None:
                 data = self._override
@@ -93,7 +98,7 @@ class JsonConnection(FileConnection):
 
     def dump(self, data: BASIC_TYPE):
         with open(self._path, 'w') as file:
-            json.dump(data, file)
+            json.dump(data, file, **self._dumper_kwargs)
 
 
 try:
@@ -104,15 +109,17 @@ except ImportError as e:
 
 class PickleConnection(FileConnection):
     """Pickle File Connection"""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, parser_kwargs: dict = None, dumper_kwargs: dict = None, **kwargs):
         if pickle is None:
             raise RuntimeError('You need to install pickle to use JsonConnection')
+        self._parser_kwargs = parser_kwargs or {}
+        self._dumper_kwargs = dumper_kwargs or {'protocol': pickle.HIGHEST_PROTOCOL}
         super().__init__(*args, **kwargs)
 
     def load(self) -> BASIC_TYPE:
         with open(self._path, 'rb') as file:
-            return pickle.load(file)
+            return pickle.load(file, **self._parser_kwargs)
 
     def dump(self, data: BASIC_TYPE):
         with open(self._path, 'wb') as file:
-            pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(data, file, **self._dumper_kwargs)
