@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from hotmarkup.conenction import RootConnection, BASIC_TYPE
 
@@ -99,6 +100,45 @@ class JsonConnection(FileConnection):
     def dump(self, data: BASIC_TYPE):
         with open(self._path, 'w') as file:
             json.dump(data, file, **self._dumper_kwargs)
+
+
+try:
+    import csv
+except ImportError as e:
+    csv = None
+
+
+class CsvConnection(FileConnection):
+    """Csv File Connection via csv backend"""
+    def __init__(self, *args, as_dict: bool = False, parser_kwargs: dict = None, dumper_kwargs: dict = None, **kwargs):
+        self._as_dict = as_dict
+        self._parser_kwargs = parser_kwargs or {}
+        self._dumper_kwargs = dumper_kwargs or {}
+        super().__init__(*args, **kwargs)
+
+    def load(self) -> BASIC_TYPE:
+        with open(self._path) as file:
+            data = list(csv.reader(file, **self._parser_kwargs))
+        if self._as_dict:
+            keys: List[str] = data[0]
+            new_data: List[dict] = []
+            for line in data[1:]:
+                new_data.append(dict(zip(keys, line)))
+            data = new_data
+        return data
+
+    def dump(self, data: BASIC_TYPE):
+        if isinstance(data[0], dict):
+            new_data = [list(data[0].keys())]
+        else:
+            new_data = []
+        for line in data:
+            if isinstance(line, dict):
+                new_data.append(list(line.values()))
+            else:
+                new_data.append(line)
+        with open(self._path, 'w') as file:
+            csv.writer(file, **self._dumper_kwargs).writerows(new_data)
 
 
 try:

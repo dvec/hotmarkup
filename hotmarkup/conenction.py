@@ -81,6 +81,10 @@ class Connection(object):
             def func(*args, **kwargs):
                 before = children_hash()
                 value = getattr(self._children, item)(*args, **kwargs)
+                for child_index in range(len(self._children)):
+                    if isinstance(self._children[child_index], BASIC_TYPE.__args__):
+                        self._children[child_index] = Connection(str(child_index), self._children[child_index],
+                                                                 self, self._change_callback, self._check_actual)
                 if before != children_hash():
                     if not self.mutable:
                         raise RuntimeError(
@@ -228,3 +232,5 @@ class RootConnection(Connection):
 
     def check(self, name: str, value):
         pass
+
+    # TODO ADD post_parse method
