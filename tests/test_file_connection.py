@@ -3,12 +3,11 @@ import shutil
 import tempfile
 import unittest
 
-from hotmarkup.file_connection import YamlConnection, JsonConnection, CsvConnection, PickleConnection
+from hotmarkup.file_connection import YamlConnection, JsonConnection, PickleConnection
 
 
 class TestFileConnection(unittest.TestCase):
     TO_DICT_TEST = [YamlConnection, JsonConnection, PickleConnection]
-    TO_LIST_TEST = [CsvConnection]
 
     def setUp(self):
         logging.basicConfig(level=logging.DEBUG)
@@ -47,15 +46,3 @@ class TestFileConnection(unittest.TestCase):
         for connection_type in self.TO_DICT_TEST:
             self._test_dict_file_connection(connection_type)
             self._test_empty_file(connection_type)
-
-    def test_csv_connection(self):
-        path = tempfile.NamedTemporaryFile(dir=self.dir_path).name
-        CsvConnection(path, default=[['field_1', 'field_2'], ['value_1', 'value_2']])
-        connection = CsvConnection(path, as_dict=True)
-        self.assertEqual(connection.to_basic(), [{'field_1': 'value_1', 'field_2': 'value_2'}])
-        connection[0]['field_1'] = 'value_3'
-        connection.append(['value_4', 'value_5'])
-        del connection
-        connection = CsvConnection(path, as_dict=True)
-        self.assertEqual(connection[0]['field_1'], 'value_3')
-        self.assertEqual(connection[1]['field_2'], 'value_5')

@@ -6,9 +6,10 @@ BASIC_TYPE = Union[dict, list]
 
 
 class MutationType(Enum):
-    ADD = 'ADD'
-    DEL = 'DEL'
-    SET = 'SET'
+    ADD = 'ADD'        # del conn.a; conn.a = 'value'
+    DELETE = 'DELETE'  # del conn.a
+    UPDATE = 'UPDATE'  # conn.a = 'new_value'
+    FUNC = 'FUNC'      # conn.a.sort()
 
 
 class Connection(object):
@@ -18,13 +19,13 @@ class Connection(object):
     """
     # noinspection PyProtectedMember
     def __init__(self, name: str, basic: BASIC_TYPE, parent,
-                 change_callback: Callable[[str, MutationType, Any], None], check_actual: Callable[[], None]):
+                 change_callback: Callable[[str, MutationType, Any], None], check_callback: Callable[[], None]):
         """
         :param name: Connection name used for logging configuration (defaults to __name__)
         :param basic: Data for connection
         :param parent: Connection parent. If connection is root parent equals to self
         :param change_callback: Function that will be called on data change
-        :param check_actual: Function that will be called to check if data is actual. If not function must reload data
+        :param check_callback: Function that will be called to check if data is actual. If not function must reload data
         """
         self._parent: Connection = parent
         if parent is parent._parent:
@@ -38,7 +39,7 @@ class Connection(object):
         self._mutable: bool = self._parent._mutable
 
         self._change_callback: Callable[[str, MutationType, Any], None] = change_callback
-        self._check_actual: Callable[[], None] = check_actual
+        self._check_callback: Callable[[], None] = check_callback
 
         self._load_from_basic(basic)
 
@@ -50,18 +51,18 @@ class Connection(object):
             raise RuntimeError(f'Value {self._name + "." + key} is immutable')
         existed: bool = key in self._children
         if isinstance(value, (list, dict)):
-            self._children[key] = Connection(key, value, self, self._change_callback, self._check_actual)
+            self._children[key] = Connection(key, value, self, self._change_callback, self._check_callback)
         else:
             self._children[key] = value
-        self._change_callback(self._name + '.' + key, MutationType.SET if existed else MutationType.ADD, value)
+        self._change_callback(self._name + '.' + key, MutationType.UPDATE if existed else MutationType.ADD, value)
 
     def __getitem__(self, item):
-        self._check_actual()
+        self._check_callback()
         return self._children[item]
 
     def __delitem__(self, key):
         del self._children[key]
-        self._change_callback(self._name + '.' + key, MutationType.DEL, None)
+        self._change_callback(self._name + '.' + key, MutationType.DELETE, None)
 
     def __setattr__(self, key, value):
         if key.startswith('_') or key in dir(self) or key in dir(self.__class__):
@@ -73,7 +74,7 @@ class Connection(object):
         if item in dir(self) or item in dir(self.__class__):
             return super(Connection, self).__getattribute__(item)
         if item in self._children.__dir__():
-            self._check_actual()
+            self._check_callback()
 
             def children_hash():
                 return hash(tuple(self._children))
@@ -84,12 +85,12 @@ class Connection(object):
                 for child_index in range(len(self._children)):
                     if isinstance(self._children[child_index], BASIC_TYPE.__args__):
                         self._children[child_index] = Connection(str(child_index), self._children[child_index],
-                                                                 self, self._change_callback, self._check_actual)
+                                                                 self, self._change_callback, self._check_callback)
                 if before != children_hash():
                     if not self.mutable:
                         raise RuntimeError(
                             f'Called {type(self._children).__name__}.{item} for non-mutable instance')
-                    self._change_callback(self._name, MutationType.SET, self._children)
+                    self._change_callback(self._name, MutationType.FUNC, self._children)
                 return value
 
             return func
@@ -123,14 +124,14 @@ class Connection(object):
             self._children = {}
             for k, v in basic.items():
                 if any(isinstance(v, x) for x in BASIC_TYPE.__args__):
-                    self._children[k] = Connection(k, v, self, self._change_callback, self._check_actual)
+                    self._children[k] = Connection(k, v, self, self._change_callback, self._check_callback)
                 else:
                     self._children[k] = v
         elif isinstance(basic, list):
             self._children = []
             for e, v in enumerate(basic):
                 if any(isinstance(v, x) for x in BASIC_TYPE.__args__):
-                    self._children.append(Connection(str(e), v, self, self._change_callback, self._check_actual))
+                    self._children.append(Connection(str(e), v, self, self._change_callback, self._check_callback))
                 else:
                     self._children.append(v)
         else:
@@ -140,7 +141,7 @@ class Connection(object):
         """Convert Connection to basic type
         :return: dict or list
         """
-        self._check_actual()
+        self._check_callback()
         if isinstance(self._children, dict):
             result = {}
             for name, value in self._children.items():
@@ -195,19 +196,19 @@ class RootConnection(Connection):
         self._mutable: bool = mutable
         self._dump: bool = dump
         self._reload: bool = reload
-        super().__init__(name, self.load(), self, self._change_callback, self._check_actual)
+        super().__init__(name, self.load(), self, self._change_callback, self._check_callback)
 
     def _change_callback(self, name: str, mutation_type: MutationType, new_value):
         log_value = new_value.to_basic() if isinstance(new_value, Connection) else new_value
         self._logger.info(f'Registered {mutation_type.name} '
-                          f'{f"{name}" if mutation_type == MutationType.DEL else f"{name}={log_value}"}')
+                          f'{f"{name}" if mutation_type == MutationType.DELETE else f"{name}={log_value}"}')
         if self._dump is False:
             return
         self._logger.debug(f'Saving config')
         self.dump(self.to_basic())
         self._cached_stamp: int = self.stamp()
 
-    def _check_actual(self):
+    def _check_callback(self):
         if self._reload is False:
             return
         new_stamp: int = self.stamp()

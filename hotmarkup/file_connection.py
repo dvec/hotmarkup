@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 from hotmarkup.conenction import RootConnection, BASIC_TYPE
 
@@ -46,6 +45,11 @@ except ImportError as e:
 class YamlConnection(FileConnection):
     """Yaml File Connection via PyYAML backend"""
     def __init__(self, *args, loader=yaml.SafeLoader, dumper=yaml.SafeDumper, dumper_kwargs: dict = None, **kwargs):
+        """
+        :param loader: loader used to load data
+        :param dumper: dumper used to dump data
+        :param dumper_kwargs: kwargs for data dumper
+        """
         if yaml is None:
             raise RuntimeError('You need to install PyYAML to use YamlConnection')
         self._loader = loader
@@ -79,6 +83,10 @@ except ImportError as e:
 class JsonConnection(FileConnection):
     """Json File Connection via json backend"""
     def __init__(self, *args, parser_kwargs: dict = None, dumper_kwargs: dict = None, **kwargs):
+        """
+        :param parser_kwargs: kwargs for data parser
+        :param dumper_kwargs: kwargs for data dumper
+        """
         if json is None:
             raise RuntimeError('You need to install json to use JsonConnection')
         self._parser_kwargs = parser_kwargs or {}
@@ -103,45 +111,6 @@ class JsonConnection(FileConnection):
 
 
 try:
-    import csv
-except ImportError as e:
-    csv = None
-
-
-class CsvConnection(FileConnection):
-    """Csv File Connection via csv backend"""
-    def __init__(self, *args, as_dict: bool = False, parser_kwargs: dict = None, dumper_kwargs: dict = None, **kwargs):
-        self._as_dict = as_dict
-        self._parser_kwargs = parser_kwargs or {}
-        self._dumper_kwargs = dumper_kwargs or {}
-        super().__init__(*args, **kwargs)
-
-    def load(self) -> BASIC_TYPE:
-        with open(self._path) as file:
-            data = list(csv.reader(file, **self._parser_kwargs))
-        if self._as_dict:
-            keys: List[str] = data[0]
-            new_data: List[dict] = []
-            for line in data[1:]:
-                new_data.append(dict(zip(keys, line)))
-            data = new_data
-        return data
-
-    def dump(self, data: BASIC_TYPE):
-        if isinstance(data[0], dict):
-            new_data = [list(data[0].keys())]
-        else:
-            new_data = []
-        for line in data:
-            if isinstance(line, dict):
-                new_data.append(list(line.values()))
-            else:
-                new_data.append(line)
-        with open(self._path, 'w') as file:
-            csv.writer(file, **self._dumper_kwargs).writerows(new_data)
-
-
-try:
     import pickle
 except ImportError as e:
     pickle = None
@@ -150,6 +119,10 @@ except ImportError as e:
 class PickleConnection(FileConnection):
     """Pickle File Connection"""
     def __init__(self, *args, parser_kwargs: dict = None, dumper_kwargs: dict = None, **kwargs):
+        """
+        :param parser_kwargs: kwargs for data parser
+        :param dumper_kwargs: kwargs for data dumper
+        """
         if pickle is None:
             raise RuntimeError('You need to install pickle to use JsonConnection')
         self._parser_kwargs = parser_kwargs or {}
