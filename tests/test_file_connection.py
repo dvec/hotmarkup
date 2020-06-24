@@ -57,6 +57,5 @@ class TestFileConnection(unittest.TestCase):
         connection.append(['value_4', 'value_5'])
         del connection
         connection = CsvConnection(path, as_dict=True)
-        print(connection.to_basic())
         self.assertEqual(connection[0]['field_1'], 'value_3')
         self.assertEqual(connection[1]['field_2'], 'value_5')
