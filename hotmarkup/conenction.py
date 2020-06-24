@@ -1,7 +1,14 @@
 import logging
-from typing import Union, Callable
+from enum import Enum
+from typing import Union, Callable, Any
 
 BASIC_TYPE = Union[dict, list]
+
+
+class ChangeType(Enum):
+    ADD = 'ADD'
+    DEL = 'DEL'
+    CHANGE = 'CHANGE'
 
 
 class Connection(object):
@@ -11,7 +18,7 @@ class Connection(object):
     """
     # noinspection PyProtectedMember
     def __init__(self, name: str, basic: BASIC_TYPE, parent,
-                 change_callback: Callable[[], None], check_actual: Callable[[], None]):
+                 change_callback: Callable[[str, ChangeType, Any], None], check_actual: Callable[[], None]):
         """
         :param name: Connection name used for logging configuration (defaults to __name__)
         :param basic: Data for connection
@@ -30,7 +37,7 @@ class Connection(object):
         self._logger: logging.Logger = self._root._logger
         self._mutable: bool = self._parent._mutable
 
-        self._change_callback: Callable[[], None] = change_callback
+        self._change_callback: Callable[[str, ChangeType, Any], None] = change_callback
         self._check_actual: Callable[[], None] = check_actual
 
         self._load_from_basic(basic)
@@ -41,12 +48,12 @@ class Connection(object):
             return
         if not self.mutable:
             raise RuntimeError(f'Value {self._name + "." + key} is immutable')
-        self._logger.info(f'Setting \'{self._name + "." + key}\' to \'{value}\'')
+        existed: bool = key in self._children
         if isinstance(value, (list, dict)):
             self._children[key] = Connection(key, value, self, self._change_callback, self._check_actual)
         else:
             self._children[key] = value
-        self._change_callback()
+        self._change_callback(self._name + '.' + key, ChangeType.CHANGE if existed else ChangeType.ADD, value)
 
     def __getitem__(self, item):
         self._check_actual()
@@ -54,7 +61,7 @@ class Connection(object):
 
     def __delitem__(self, key):
         del self._children[key]
-        self._change_callback()
+        self._change_callback(self._name + '.' + key, ChangeType.DEL, None)
 
     def __setattr__(self, key, value):
         if key.startswith('_') or key in dir(self) or key in dir(self.__class__):
@@ -78,7 +85,7 @@ class Connection(object):
                     if not self.mutable:
                         raise RuntimeError(
                             f'Called {type(self._children).__name__}.{item} for non-mutable instance')
-                    self._change_callback()
+                    self._change_callback(self._name, ChangeType.CHANGE, self._children)
                 return value
 
             return func
@@ -186,7 +193,9 @@ class RootConnection(Connection):
         self._reload: bool = reload
         super().__init__(name, self.load(), self, self._change_callback, self._check_actual)
 
-    def _change_callback(self):
+    def _change_callback(self, name: str, mutation_type: ChangeType, new_value):
+        self._logger.info(f'Registered {mutation_type.name} '
+                          f'{f"{name}" if mutation_type == ChangeType.DEL else f"{name}={new_value}"}')
         if self._dump is False:
             return
         self._logger.debug(f'Saving config')
@@ -216,3 +225,6 @@ class RootConnection(Connection):
         If stamp does not equals previously saved stamp load function calls
         """
         raise NotImplementedError(f'Function \'stamp\' in {self.__class__.__name__} not implemented')
+
+    def check(self, name: str, value):
+        pass
