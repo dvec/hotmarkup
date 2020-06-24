@@ -40,7 +40,7 @@ class Connection(object):
                 (isinstance(self._children, dict) and key in self._children and self._children[key] == value):
             return
         if not self.mutable:
-            raise RuntimeError(f'Value {self._name + "." + key} is immutable {self.__dict__=}')
+            raise RuntimeError(f'Value {self._name + "." + key} is immutable')
         self._logger.info(f'Setting \'{self._name + "." + key}\' to \'{value}\'')
         if isinstance(value, (list, dict)):
             self._children[key] = Connection(key, value, self, self._change_callback, self._check_actual)
