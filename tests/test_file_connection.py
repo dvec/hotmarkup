@@ -27,19 +27,6 @@ class TestFileConnection(unittest.TestCase):
         connection = connection_type(path)
         self.assertEqual(connection.test_ok, True)
 
-    def _test_list_file_connection(self, connection_type):
-        path = tempfile.NamedTemporaryFile(dir=self.dir_path).name
-        connection_type(path, default=[['field_1', 'field_2'], ['value_1', 'value_2']])
-        connection = connection_type(path, as_dict=True)
-        self.assertEqual(connection.to_basic(), [{'field_1': 'value_1', 'field_2': 'value_2'}])
-        connection[0]['field_1'] = 'value_3'
-        connection.append(['value_4', 'value_5'])
-        del connection
-        connection = connection_type(path, as_dict=True)
-        print(connection.to_basic())
-        self.assertEqual(connection[0]['field_1'], 'value_3')
-        self.assertEqual(connection[1]['field_2'], 'value_5')
-
     def _test_empty_file(self, connection_type):
         connection = connection_type(tempfile.NamedTemporaryFile(dir=self.dir_path)
                                      .name, default={})
@@ -60,5 +47,16 @@ class TestFileConnection(unittest.TestCase):
         for connection_type in self.TO_DICT_TEST:
             self._test_dict_file_connection(connection_type)
             self._test_empty_file(connection_type)
-        for connection_type in self.TO_LIST_TEST:
-            self._test_list_file_connection(connection_type)
+
+    def test_csv_connection(self):
+        path = tempfile.NamedTemporaryFile(dir=self.dir_path).name
+        CsvConnection(path, default=[['field_1', 'field_2'], ['value_1', 'value_2']])
+        connection = CsvConnection(path, as_dict=True)
+        self.assertEqual(connection.to_basic(), [{'field_1': 'value_1', 'field_2': 'value_2'}])
+        connection[0]['field_1'] = 'value_3'
+        connection.append(['value_4', 'value_5'])
+        del connection
+        connection = CsvConnection(path, as_dict=True)
+        print(connection.to_basic())
+        self.assertEqual(connection[0]['field_1'], 'value_3')
+        self.assertEqual(connection[1]['field_2'], 'value_5')
