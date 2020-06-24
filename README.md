@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.com/dvec/hotmarkup.svg?branch=master)](https://travis-ci.com/dvec/hotmarkup)
 #### Python configuration as it should be
 
-Currently supported formats: **YAML**, **JSON**, **CSV**, **Pickle**
+Currently supported formats: **YAML**, **JSON**, **Pickle**
 
 #### Main features:
  - Work with Connection object as usual data structure. You can use features like array slices or methods of `dict` and `list`
