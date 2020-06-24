@@ -8,9 +8,10 @@ class FileConnection(RootConnection):
     All file connection types must inherit FileConnection.
     This class implements stamp function
     """
-    def __init__(self, path: str, default: BASIC_TYPE = None, override: BASIC_TYPE = None, **kwargs):
+    def __init__(self, path: str, name: str = None, default: BASIC_TYPE = None, override: BASIC_TYPE = None, **kwargs):
         """
         :param path path to file with data
+        :param name connection name. Defaults to path
         :param default default data which will be used if file is empty or does not exists
         :param override data that will dumped to file while creating FileConnection.
                If passed then default will be ignored
@@ -23,7 +24,7 @@ class FileConnection(RootConnection):
             self.dump(override)
         self._default: BASIC_TYPE = default
         self._override: BASIC_TYPE = override
-        super().__init__(name=path, **kwargs)
+        super().__init__(name=name or path, **kwargs)
 
     def load(self) -> BASIC_TYPE:
         return super(FileConnection, self).load()
