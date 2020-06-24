@@ -5,10 +5,10 @@ from typing import Union, Callable, Any
 BASIC_TYPE = Union[dict, list]
 
 
-class ChangeType(Enum):
+class MutationType(Enum):
     ADD = 'ADD'
     DEL = 'DEL'
-    CHANGE = 'CHANGE'
+    SET = 'SET'
 
 
 class Connection(object):
@@ -18,7 +18,7 @@ class Connection(object):
     """
     # noinspection PyProtectedMember
     def __init__(self, name: str, basic: BASIC_TYPE, parent,
-                 change_callback: Callable[[str, ChangeType, Any], None], check_actual: Callable[[], None]):
+                 change_callback: Callable[[str, MutationType, Any], None], check_actual: Callable[[], None]):
         """
         :param name: Connection name used for logging configuration (defaults to __name__)
         :param basic: Data for connection
@@ -37,7 +37,7 @@ class Connection(object):
         self._logger: logging.Logger = self._root._logger
         self._mutable: bool = self._parent._mutable
 
-        self._change_callback: Callable[[str, ChangeType, Any], None] = change_callback
+        self._change_callback: Callable[[str, MutationType, Any], None] = change_callback
         self._check_actual: Callable[[], None] = check_actual
 
         self._load_from_basic(basic)
@@ -53,7 +53,7 @@ class Connection(object):
             self._children[key] = Connection(key, value, self, self._change_callback, self._check_actual)
         else:
             self._children[key] = value
-        self._change_callback(self._name + '.' + key, ChangeType.CHANGE if existed else ChangeType.ADD, value)
+        self._change_callback(self._name + '.' + key, MutationType.SET if existed else MutationType.ADD, value)
 
     def __getitem__(self, item):
         self._check_actual()
@@ -61,7 +61,7 @@ class Connection(object):
 
     def __delitem__(self, key):
         del self._children[key]
-        self._change_callback(self._name + '.' + key, ChangeType.DEL, None)
+        self._change_callback(self._name + '.' + key, MutationType.DEL, None)
 
     def __setattr__(self, key, value):
         if key.startswith('_') or key in dir(self) or key in dir(self.__class__):
@@ -89,7 +89,7 @@ class Connection(object):
                     if not self.mutable:
                         raise RuntimeError(
                             f'Called {type(self._children).__name__}.{item} for non-mutable instance')
-                    self._change_callback(self._name, ChangeType.CHANGE, self._children)
+                    self._change_callback(self._name, MutationType.SET, self._children)
                 return value
 
             return func
@@ -197,9 +197,10 @@ class RootConnection(Connection):
         self._reload: bool = reload
         super().__init__(name, self.load(), self, self._change_callback, self._check_actual)
 
-    def _change_callback(self, name: str, mutation_type: ChangeType, new_value):
+    def _change_callback(self, name: str, mutation_type: MutationType, new_value):
+        log_value = new_value.to_basic() if isinstance(new_value, Connection) else new_value
         self._logger.info(f'Registered {mutation_type.name} '
-                          f'{f"{name}" if mutation_type == ChangeType.DEL else f"{name}={new_value}"}')
+                          f'{f"{name}" if mutation_type == MutationType.DEL else f"{name}={log_value}"}')
         if self._dump is False:
             return
         self._logger.debug(f'Saving config')
@@ -229,8 +230,3 @@ class RootConnection(Connection):
         If stamp does not equals previously saved stamp load function calls
         """
         raise NotImplementedError(f'Function \'stamp\' in {self.__class__.__name__} not implemented')
-
-    def check(self, name: str, value):
-        pass
-
-    # TODO ADD post_parse method
