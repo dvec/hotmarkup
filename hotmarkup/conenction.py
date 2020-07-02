@@ -82,9 +82,9 @@ class Connection(object):
             def func(*args, **kwargs):
                 before = children_hash()
                 value = getattr(self._children, item)(*args, **kwargs)
-                for child_index in range(len(self._children)):
-                    if isinstance(self._children[child_index], BASIC_TYPE.__args__):
-                        self._children[child_index] = Connection(str(child_index), self._children[child_index],
+                for child in (self._children if isinstance(self._children, dict) else range(len(self._children))):
+                    if isinstance(self._children[child], BASIC_TYPE.__args__):
+                        self._children[child] = Connection(str(child), self._children[child],
                                                                  self, self._mutation_callback, self._check_callback)
                 if before != children_hash():
                     if not self.mutable:

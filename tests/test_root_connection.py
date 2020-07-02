@@ -77,6 +77,14 @@ class TestBaseConnection(unittest.TestCase):
         for i in mock[2:7:2]:
             self.assertEqual(i, next(expected))
 
+    def test_star(self):
+        mock = RootConnectionMock(list(range(10)))
+        self.assertEqual([*mock], list(range(10)))
+
+    def test_double_star(self):
+        mock = RootConnectionMock({'a': 'b'})
+        self.assertEqual({**mock}, {'a': 'b'})
+
     def test_func(self):
         mock = RootConnectionMock(list(reversed(range(10))))
         mock.sort()
