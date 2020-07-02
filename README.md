@@ -1,6 +1,6 @@
 # HOTMARKUP
 [![Build Status](https://travis-ci.com/dvec/hotmarkup.svg?branch=master)](https://travis-ci.com/dvec/hotmarkup)
-#### Python configuration as it should be
+#### Synchronize data structure with markup file
 
 Currently supported formats: **YAML**, **JSON**, **Pickle**
 
