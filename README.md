@@ -7,9 +7,9 @@ Currently supported formats: **YAML**, **JSON**, **Pickle**
 #### Main features:
  - Work with Connection object as usual data structure. You can use features like array slices or methods of `dict` and `list`
  - JS-like accessing (foo.bar.buzz instead of foo['bar']['buzz'])
- - Modifications logging via `logging` module. Example below
+ - Mutations logging via `logging` module. Example below
  - Reload on file change (pass `reload=False` to connection constructor to disable)
- - Dump file on every change (pass `dump=False` to connection constructor to disable)
+ - Update file on every change (pass `save=False` to connection constructor to disable)
  - Immutable connections (pass `mutable=False` to connection constructor to enable)
 ## Installation
 ```shell script
@@ -42,13 +42,11 @@ from hotmarkup import YamlConnection
 
 logging.basicConfig(level=logging.INFO)
 connection = YamlConnection('example.yaml', default={'something_important': 'old_value'})
-
 connection.something_important = 'new_value'
 ```
 Output:
 ```
-INFO:example.yaml:Loaded example.yaml config: {'something_important': 'old_value'}
-INFO:example.yaml:Setting 'something_important' to 'new_value'
+INFO:example.yaml:Mutation UPDATE example.yaml.something_important=new_value
 ```
 #### [Counter](https://github.com/dvec/hotmarkup/blob/master/examples/counter.py)
 ```python

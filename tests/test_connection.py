@@ -55,8 +55,8 @@ class TestBaseConnection(unittest.TestCase):
         mock['a'] = 'c'
         self.assertEqual(mock._dumps, [{'a': 'c'}])
 
-    def test_dump_false(self):
-        mock = RootConnectionMock({'a': 'b'}, dump=False)
+    def test_save_false(self):
+        mock = RootConnectionMock({'a': 'b'}, save=False)
         mock['a'] = 'c'
         self.assertEqual(mock._dumps, [])
 
@@ -129,6 +129,25 @@ class TestBaseConnection(unittest.TestCase):
         mock = RootConnectionMock(basic)
         self.assertEqual(mock.to_basic(), basic)
 
+    def test_partly_save_false(self):
+        mock = RootConnectionMock({'a': {'b': 'c'}, 'd': {'e': 'f'}})
+        mock.a.save = False
+        mock.a.b = 'd'
+        self.assertEqual(mock._dumps, [])
+        mock.d.e = 'g'
+        self.assertEqual(mock._dumps, [{'a': {'b': 'd'}, 'd': {'e': 'g'}}])
+
+    def test_partly_reload_false(self):
+        mock = RootConnectionMock({'a': {'b': 'c'}, 'd': {'e': 'f'}})
+        mock.a.reload = False
+        mock._stamp = 1
+        mock._data = {'d': {'f': 'g'}}
+        self.assertEqual(mock.to_basic(), {'a': {'b': 'c'}, 'd': {'f': 'g'}})
+        mock._stamp = 2
+        mock._data = ['h', 'i', 'j']
+        with self.assertRaises(TypeError):
+            mock.to_basic()
+
     def test_partly_immutable(self):
         mock = RootConnectionMock({'a': {'b': {'c': 'd'}}, 'e': {'f': 'g'}})
         mock.a.mutable = False
@@ -138,11 +157,11 @@ class TestBaseConnection(unittest.TestCase):
         mock.a.b.c = 'e'
         self.assertEqual(mock.a.b.c, 'e')
 
-    def test_add_log(self):
+    def test_new_log(self):
         mock = RootConnectionMock({})
         with self.assertLogs('mock', level=logging.INFO) as log:
             mock.a = 'b'
-            self.assertEqual(log.output, ['INFO:mock:Mutation ADD mock.a=b'])
+            self.assertEqual(log.output, ['INFO:mock:Mutation NEW mock.a=b'])
 
     def test_delete_log(self):
         mock = RootConnectionMock({'a': 'b'})
