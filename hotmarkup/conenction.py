@@ -31,7 +31,7 @@ class Connection(object):
         :param check_callback: Function that will be called to check if data is actual. If not function must reload data
         """
         self._parent: Connection = parent
-        if parent is parent._parent:
+        if parent is self:
             self._name: str = parent._name
         else:
             self._name: str = self._parent._name + '.' + name
@@ -56,13 +56,17 @@ class Connection(object):
             return
         if not self.mutable:
             raise RuntimeError(f'Value {self._name + "." + key} is immutable')
-        existed: bool = key in self._children
+        if isinstance(self._children, list):
+            existed = True
+        else:
+            existed = key in self._children
         if isinstance(value, (list, dict)):
             self._children[key] = Connection(key, value, self, self._mutation_callback,
                                              self._dump_callback, self._check_callback)
         else:
             self._children[key] = value
-        self._mutation_callback(self._name + '.' + key, MutationType.UPDATE if existed else MutationType.NEW, value)
+        self._mutation_callback(self._name + '.' + str(key),
+                                MutationType.UPDATE if existed else MutationType.NEW, value)
         if self._save:
             self._dump_callback()
 
@@ -72,7 +76,7 @@ class Connection(object):
 
     def __delitem__(self, key):
         del self._children[key]
-        self._mutation_callback(self._name + '.' + key, MutationType.DELETE, None)
+        self._mutation_callback(self._name + '.' + str(key), MutationType.DELETE, None)
         if self._save:
             self._dump_callback()
 

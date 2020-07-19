@@ -164,19 +164,21 @@ class TestBaseConnection(unittest.TestCase):
             self.assertEqual(log.output, ['INFO:mock:Mutation NEW mock.a=b'])
 
     def test_delete_log(self):
-        mock = RootConnectionMock({'a': 'b'})
+        mock = RootConnectionMock({'a': 'b', 'c': ['d', 'e']})
         with self.assertLogs('mock', level=logging.INFO) as log:
             del mock.a
-            self.assertEqual(log.output, ['INFO:mock:Mutation DELETE mock.a'])
+            del mock.c[0]
+            self.assertEqual(log.output, ['INFO:mock:Mutation DELETE mock.a', 'INFO:mock:Mutation DELETE mock.c.0'])
 
     def test_update_log(self):
-        mock = RootConnectionMock({'a': 'b'})
+        mock = RootConnectionMock({'a': 'b', 'c': ['d', 'e']})
         with self.assertLogs('mock', level=logging.INFO) as log:
             mock.a = 'c'
-            self.assertEqual(log.output, ['INFO:mock:Mutation UPDATE mock.a=c'])
+            mock.c[0] = 'e'
+            self.assertEqual(log.output, ['INFO:mock:Mutation UPDATE mock.a=c', 'INFO:mock:Mutation UPDATE mock.c.0=e'])
 
     def test_func_log(self):
         mock = RootConnectionMock({'a': [2, 3, 1, 0]})
         with self.assertLogs('mock', level=logging.INFO) as log:
             mock.a.sort()
-            self.assertEqual(log.output, ['INFO:mock:Mutation FUNC mock.sort; new value: [0, 1, 2, 3]'])
+            self.assertEqual(log.output, ['INFO:mock:Mutation FUNC mock.a.sort; new value: [0, 1, 2, 3]'])
