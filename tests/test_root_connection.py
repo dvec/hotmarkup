@@ -21,7 +21,7 @@ class RootConnectionMock(RootConnection):
         self._dumps.append(data)
 
 
-class TestBaseConnection(unittest.TestCase):
+class TestRootConnection(unittest.TestCase):
     def setUp(self):
         logging.basicConfig(level=logging.INFO)
 
