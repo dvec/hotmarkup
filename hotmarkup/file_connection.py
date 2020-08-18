@@ -45,7 +45,7 @@ except ImportError as e:
 
 class YamlConnection(FileConnection):
     """Yaml File Connection via PyYAML backend"""
-    def __init__(self, *args, loader=yaml.SafeLoader, dumper=yaml.SafeDumper, dumper_kwargs: dict = None, **kwargs):
+    def __init__(self, *args, loader=None, dumper=None, dumper_kwargs: dict = None, **kwargs):
         """
         :param loader: loader used to load data
         :param dumper: dumper used to dump data
@@ -53,8 +53,8 @@ class YamlConnection(FileConnection):
         """
         if yaml is None:
             raise RuntimeError('You need to install PyYAML to use YamlConnection')
-        self._loader = loader
-        self._dumper = dumper
+        self._loader = loader or yaml.SafeLoader
+        self._dumper = dumper or yaml.SafeDumper
         self._dumper_kwargs = dumper_kwargs or {}
         super().__init__(*args, **kwargs)
 
