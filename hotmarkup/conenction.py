@@ -245,7 +245,7 @@ class Connection(object):
 class RootConnection(Connection):
     """
     RootConnection class
-    It implements
+    It implements logging, stamp checking and dump callback calling functionality
     """
 
     def __init__(self, name: str = None, logger: logging.Logger = None,
