@@ -61,7 +61,7 @@ class Connection(object):
         else:
             existed = key in self._children
         if isinstance(value, (list, dict)):
-            self._children[key] = Connection(key, value, self, self._mutation_callback,
+            self._children[key] = Connection(str(key), value, self, self._mutation_callback,
                                              self._dump_callback, self._check_callback)
         else:
             self._children[key] = value
@@ -114,7 +114,10 @@ class Connection(object):
                 return value
 
             return func
-        return self[item]
+        try:
+            return self[item]
+        except LookupError as e:
+            raise AttributeError from e
 
     def __delattr__(self, item):
         del self[item]
@@ -156,7 +159,7 @@ class Connection(object):
                                 f' You can\'t change basic type on fly')
             for k, v in basic.items():
                 if any(isinstance(v, x) for x in BASIC_TYPE.__args__):
-                    self._children[k] = Connection(k, v, self, self._mutation_callback,
+                    self._children[k] = Connection(str(k), v, self, self._mutation_callback,
                                                    self._dump_callback, self._check_callback)
                 else:
                     self._children[k] = v
@@ -271,6 +274,8 @@ class RootConnection(Connection):
 
     def _log_mutation(self, name: str, mutation_type: MutationType, new_value, level=None):
         value_to_log = str(new_value)
+        if len(value_to_log) > 100:
+            value_to_log = value_to_log[:100] + '...'
         self._logger.log(level or logging.INFO, f'Mutation {mutation_type.name} ' + {
             MutationType.NEW: f'{name}={value_to_log}',
             MutationType.DELETE: f'{name}',

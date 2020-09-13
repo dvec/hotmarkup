@@ -33,6 +33,12 @@ class TestRootConnection(unittest.TestCase):
         mock = RootConnectionMock([0, 2, 1])
         self.assertEqual(mock[1], 2)
 
+    def test_dict_with_int_keys(self):
+        mock = RootConnectionMock({1: 'a'})
+        mock[2] = 'b'
+        mock[3] = {4: 'c'}
+        self.assertEqual(mock.to_basic(), {1: 'a', 2: 'b', 3: {4: 'c'}})
+
     def test_multiple_level(self):
         mock = RootConnectionMock({'a': {'b': {'c': 'd'}}})
         mock.a.b.c = 'e'
@@ -95,16 +101,16 @@ class TestRootConnection(unittest.TestCase):
         mock += [2, 3]
         self.assertEqual(mock.to_basic(), [0, 1, 2, 3])
 
+    def test_set_basic(self):
+        mock = RootConnectionMock({'a': 'b'})
+        mock.c = {'d': 'e'}
+        self.assertEqual(mock._dumps, [{'a': 'b', 'c': {'d': 'e'}}])
+
     def test_set_empty_basic(self):
         mock = RootConnectionMock({'a': 'b'})
         mock.c = {}
         mock.c.d = 'e'
         self.assertEqual(mock._dumps, [{'a': 'b', 'c': {}}, {'a': 'b', 'c': {'d': 'e'}}])
-
-    def test_set_basic(self):
-        mock = RootConnectionMock({'a': 'b'})
-        mock.c = {'d': 'e'}
-        self.assertEqual(mock._dumps, [{'a': 'b', 'c': {'d': 'e'}}])
 
     def test_item_get(self):
         mock = RootConnectionMock({'a': 'b'})
@@ -124,10 +130,32 @@ class TestRootConnection(unittest.TestCase):
         mock.a = 'c'
         self.assertEqual(mock.a, 'c')
 
+    def test_getattr(self):
+        mock = RootConnectionMock({'a': 'b', 'c': {'d': 'e'}})
+        self.assertEqual(getattr(mock, 'a'), 'b')
+        self.assertEqual(getattr(mock, 'c').to_basic(), {'d': 'e'})
+
+    def test_setattr(self):
+        mock = RootConnectionMock({'a': 'b'})
+        setattr(mock, 'a', 'c')
+        self.assertTrue(mock.a, 'c')
+
+    def test_hasattr(self):
+        mock = RootConnectionMock({'a': 'b'})
+        self.assertTrue(hasattr(mock, 'a'))
+        self.assertFalse(hasattr(mock, 'c'))
+
     def test_to_basic(self):
-        basic = {'a': 'b'}
-        mock = RootConnectionMock(basic)
-        self.assertEqual(mock.to_basic(), basic)
+        mock = RootConnectionMock({'a': 'b', 'c': {'d': 'e'}})
+        self.assertEqual(mock.to_basic(), {'a': 'b', 'c': {'d': 'e'}})
+
+    def test_dict_cast(self):
+        mock = RootConnectionMock({'a': 'b'})
+        self.assertEqual(dict(mock), {'a': 'b'})
+
+    def test_list_cast(self):
+        mock = RootConnectionMock(['a', 'b'])
+        self.assertEqual(list(mock), ['a', 'b'])
 
     def test_partly_save_false(self):
         mock = RootConnectionMock({'a': {'b': 'c'}, 'd': {'e': 'f'}})
@@ -182,3 +210,8 @@ class TestRootConnection(unittest.TestCase):
         with self.assertLogs('mock', level=logging.INFO) as log:
             mock.a.sort()
             self.assertEqual(log.output, ['INFO:mock:Mutation FUNC mock.a.sort; new value: [0, 1, 2, 3]'])
+        mock = RootConnectionMock({'a': list(range(100))})
+        expected = repr(list(range(100))[::-1])[:100] + '...'
+        with self.assertLogs('mock', level=logging.INFO) as log:
+            mock.a.sort(reverse=True)
+            self.assertEqual(log.output, [f'INFO:mock:Mutation FUNC mock.a.sort; new value: {expected}'])
