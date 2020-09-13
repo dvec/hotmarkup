@@ -18,7 +18,6 @@ class Connection(object):
     It implements base hotmarkup connection functionality
     """
 
-    # noinspection PyProtectedMember
     def __init__(self, name: str, basic: BASIC_TYPE, parent,
                  mutation_callback: Callable[[str, MutationType, Any], None],
                  dump_callback: Callable[[], None],
@@ -157,22 +156,22 @@ class Connection(object):
             if len(self._children) > 0 and not isinstance(self._children, dict):
                 raise TypeError(f'Connection {self._name} has children with reload=False.'
                                 f' You can\'t change basic type on fly')
-            for k, v in basic.items():
-                if any(isinstance(v, x) for x in BASIC_TYPE.__args__):
-                    self._children[k] = Connection(str(k), v, self, self._mutation_callback,
-                                                   self._dump_callback, self._check_callback)
+            for key, value in basic.items():
+                if any(isinstance(value, x) for x in BASIC_TYPE.__args__):
+                    self._children[key] = Connection(str(key), value, self, self._mutation_callback,
+                                                     self._dump_callback, self._check_callback)
                 else:
-                    self._children[k] = v
+                    self._children[key] = value
         elif isinstance(basic, list):
             if len(self._children) > 0 and not isinstance(self._children, list):
                 raise TypeError(f'Connection {self._name} has children with reload=False.'
                                 f' You can\'t change basic type on fly')
-            for e, v in enumerate(basic):
-                if any(isinstance(v, x) for x in BASIC_TYPE.__args__):
-                    self._children.append(Connection(str(e), v, self, self._mutation_callback,
+            for e, value in enumerate(basic):
+                if any(isinstance(value, x) for x in BASIC_TYPE.__args__):
+                    self._children.append(Connection(str(e), value, self, self._mutation_callback,
                                                      self._dump_callback, self._check_callback))
                 else:
-                    self._children.append(v)
+                    self._children.append(value)
         else:
             raise TypeError(f'Unknown basic {type(basic)}')
 
@@ -183,11 +182,11 @@ class Connection(object):
         self._check_callback()
         if isinstance(self._children, dict):
             result = {}
-            for name, value in self._children.items():
+            for key, value in self._children.items():
                 if isinstance(value, Connection):
-                    result[name] = value.to_basic()
+                    result[key] = value.to_basic()
                 else:
-                    result[name] = value
+                    result[key] = value
         elif isinstance(self._children, list):
             result = []
             for value in self._children:
